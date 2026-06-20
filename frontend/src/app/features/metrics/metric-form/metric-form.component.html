@@ -1,0 +1,29 @@
+<div style="padding: 24px; max-width: 480px">
+  <h2>{{ editId ? 'Editar' : 'Nueva' }} métrica</h2>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline" style="width: 100%">
+      <mat-label>Nombre</mat-label>
+      <input matInput formControlName="name" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" style="width: 100%">
+      <mat-label>Valor</mat-label>
+      <input matInput type="number" formControlName="value" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" style="width: 100%">
+      <mat-label>Unidad</mat-label>
+      <input matInput formControlName="unit" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" style="width: 100%">
+      <mat-label>Fuente</mat-label>
+      <input matInput formControlName="source" />
+    </mat-form-field>
+
+    <div style="display: flex; gap: 8px">
+      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">Guardar</button>
+      <a mat-button routerLink="/metrics">Cancelar</a>
+    </div>
+  </form>
+</div>

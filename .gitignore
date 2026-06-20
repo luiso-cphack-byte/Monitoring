@@ -37,3 +37,13 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Environment ###
+.env
+
+### Node ###
+node_modules/
+frontend/dist/
+
+### Spring Boot ###
+backend/target/

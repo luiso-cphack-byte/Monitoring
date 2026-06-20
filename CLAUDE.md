@@ -2,37 +2,78 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Monorepo structure
+
+Three independently deployable services:
+- `backend/` — Spring Boot 3.2 REST API (Java 17)
+- `frontend/` — Angular 17 SPA (standalone components)
+- `docker-compose.yml` — PostgreSQL 15 + Redis 7
+
 ## Commands
 
+### Infrastructure
 ```bash
-# Build and package as WAR
-mvn package
-
-# Build without running tests
-mvn package -DskipTests
-
-# Run tests
-mvn test
-
-# Run a single test class
-mvn test -Dtest=MyTestClass
-
-# Clean build artifacts
-mvn clean
-
-# Clean and rebuild
-mvn clean package
+docker-compose up -d        # Start PostgreSQL and Redis
+docker-compose down         # Stop
+docker-compose down -v      # Stop and remove volumes
 ```
 
-To deploy and run locally, deploy `target/Monitoring.war` to a servlet container (e.g., Tomcat, Jetty).
+### Backend (`cd backend`)
+```bash
+mvn spring-boot:run         # Run dev server on :8080
+mvn test                    # Run all tests
+mvn test -Dtest=ClassName   # Run a single test class
+mvn clean package           # Build JAR
+```
 
-## Architecture
+### Frontend (`cd frontend`)
+```bash
+ng serve                    # Dev server on :4200
+ng build                    # Production build → dist/
+ng test                     # Unit tests (Karma)
+ng generate component features/metrics/my-component --standalone
+```
 
-This is a Maven WAR project (`org.example:Monitoring:1.0-SNAPSHOT`) — a Java web application packaged as a WAR for deployment to a servlet container.
+## Backend architecture
 
-- `src/main/webapp/` — web content root (JSP pages, static assets)
-- `src/main/webapp/WEB-INF/web.xml` — servlet deployment descriptor (currently Servlet 2.3)
-- `src/main/java/` — Java source (servlets, services — not yet created)
-- `src/test/java/` — test source
+```
+com.monitoring/
+├── MonitoringApplication.java   # Entry point, @EnableCaching
+├── config/
+│   ├── CorsConfig.java          # Allows http://localhost:4200 on /api/**
+│   └── RedisConfig.java         # RedisCacheManager, 10-min TTL, JSON serializer
+├── controller/
+│   └── MetricController.java    # REST CRUD → /api/metrics
+├── model/
+│   └── Metric.java              # JPA entity (id, name, value, unit, source, timestamp)
+├── repository/
+│   └── MetricRepository.java    # JpaRepository with findBySource / findByName
+└── service/
+    └── MetricService.java       # @Cacheable("metrics") on findAll, @CacheEvict on writes
+```
 
-The project is configured in IntelliJ IDEA and uses JUnit 3.8.1 for tests (declared in `pom.xml`). The web.xml and pom.xml are both at their initial scaffold state with no custom servlets or dependencies added yet.
+Key wiring: `application.properties` reads `DB_USER`, `DB_PASS`, `REDIS_HOST`, `REDIS_PORT` from environment (`.env` file via Docker or OS env).
+
+## Frontend architecture
+
+```
+src/app/
+├── core/services/
+│   └── metric.service.ts        # HttpClient wrapper for /api/metrics
+├── features/metrics/
+│   ├── metrics-list/            # Table view of all metrics
+│   └── metric-form/             # Create / edit form
+├── app.routes.ts                # /metrics, /metrics/new, /metrics/:id/edit
+└── app.config.ts                # provideHttpClient, provideRouter
+src/environments/
+├── environment.ts               # apiUrl: http://localhost:8080
+└── environment.prod.ts
+```
+
+## Adding a new entity
+
+1. Create `model/MyEntity.java` (JPA `@Entity`, `Serializable`)
+2. Create `repository/MyEntityRepository.java` (extends `JpaRepository`)
+3. Create `service/MyEntityService.java` (add `@Cacheable` / `@CacheEvict` with a new cache name)
+4. Create `controller/MyEntityController.java` (`@RequestMapping("/api/my-entities")`)
+5. In Angular: add service in `core/services/`, add feature folder, register route

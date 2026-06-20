@@ -1,38 +1,69 @@
 # Monitoring
 
-Aplicación web Java construida con Maven, empaquetada como WAR para despliegue en un servidor de aplicaciones (Tomcat, Jetty, etc.).
+Dashboard genérico full-stack con Angular, Spring Boot, PostgreSQL y Redis.
 
-## Requisitos
+## Servicios
 
-- Java JDK 8+
-- Maven 3.x
-- Servidor de aplicaciones compatible con Servlet (Tomcat, Jetty)
+| Servicio   | Tecnología       | Puerto |
+|------------|------------------|--------|
+| Frontend   | Angular 17       | 4200   |
+| Backend    | Spring Boot 3.2  | 8080   |
+| Base datos | PostgreSQL 15    | 5432   |
+| Caché      | Redis 7          | 6379   |
 
-## Construcción
+## Inicio rápido
 
-```bash
-# Compilar y generar el WAR
-mvn package
-
-# Limpiar y reconstruir
-mvn clean package
-
-# Saltar tests
-mvn package -DskipTests
-```
-
-El archivo WAR se genera en `target/Monitoring.war`.
-
-## Tests
+### 1. Base de datos y caché
 
 ```bash
-# Ejecutar todos los tests
-mvn test
-
-# Ejecutar una clase de test específica
-mvn test -Dtest=NombreDelTest
+cp .env.example .env
+docker-compose up -d
 ```
 
-## Despliegue
+### 2. Backend
 
-Copia `target/Monitoring.war` al directorio `webapps/` de tu servidor Tomcat, o configura el servidor desde tu IDE.
+```bash
+cd backend
+mvn spring-boot:run
+# Health check: GET http://localhost:8080/actuator/health
+```
+
+### 3. Frontend
+
+```bash
+cd frontend
+npm install
+ng serve
+# App: http://localhost:4200
+```
+
+## Estructura
+
+```
+Monitoring/
+├── backend/      # Spring Boot REST API
+├── frontend/     # Angular SPA
+└── docker-compose.yml
+```
+
+## API
+
+Base URL: `http://localhost:8080/api`
+
+| Método | Ruta            | Descripción          |
+|--------|-----------------|----------------------|
+| GET    | /metrics        | Listar métricas      |
+| GET    | /metrics/{id}   | Obtener una métrica  |
+| POST   | /metrics        | Crear métrica        |
+| PUT    | /metrics/{id}   | Actualizar métrica   |
+| DELETE | /metrics/{id}   | Eliminar métrica     |
+
+Body de ejemplo:
+```json
+{
+  "name": "cpu_usage",
+  "value": 72.5,
+  "unit": "%",
+  "source": "server-01"
+}
+```
