@@ -2,7 +2,6 @@ package com.monitoring.controller;
 
 import com.monitoring.model.Metric;
 import com.monitoring.service.MetricService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,10 +9,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/metrics")
-@RequiredArgsConstructor
 public class MetricController {
 
     private final MetricService service;
+
+    public MetricController(MetricService service) {
+        this.service = service;
+    }
 
     @GetMapping
     public List<Metric> getAll() {
