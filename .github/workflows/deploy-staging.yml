@@ -1,0 +1,52 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  deploy-backend:
+    name: Backend → Railway (staging)
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        run: railway up --service monitoring-backend-staging
+        working-directory: backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_STAGING }}
+
+  deploy-frontend:
+    name: Frontend → GitHub Pages (staging)
+    runs-on: ubuntu-latest
+    environment: staging
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install & build
+        run: |
+          npm ci --prefix frontend
+          npm run build --prefix frontend -- --configuration staging --base-href /Monitoring/staging/
+        env:
+          API_URL: ${{ vars.STAGING_API_URL }}
+
+      - name: Deploy to GitHub Pages (staging folder)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: frontend/dist/frontend/browser
+          destination_dir: staging
+          keep_files: true

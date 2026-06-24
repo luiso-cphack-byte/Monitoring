@@ -1,0 +1,37 @@
+name: Hotfix Validation
+
+on:
+  pull_request:
+    branches: [master]
+    # Solo ramas hotfix/* activan este workflow adicional
+  push:
+    branches:
+      - 'hotfix/**'
+
+jobs:
+  validate:
+    name: Hotfix — fast validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: maven
+
+      - name: Compile & test
+        run: mvn -f backend/pom.xml verify -q
+
+  # Cuando se mergea el hotfix a master, el workflow release.yml
+  # toma el control si se crea el tag correspondiente.
+  # Este job avisa de que hay que hacer back-merge a develop.
+  remind-backmerge:
+    name: Recordatorio back-merge a develop
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Aviso
+        run: |
+          echo "::warning::Recuerda hacer back-merge de esta rama hotfix a develop una vez mergeada a master."
